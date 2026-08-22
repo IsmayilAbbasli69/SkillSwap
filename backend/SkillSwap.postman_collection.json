@@ -1,0 +1,802 @@
+{
+  "info": {
+    "_postman_id": "2e9f731f-6d92-46e1-a662-5bbf7bca9fe2",
+    "name": "SkillSwap Backend API",
+    "description": "Postman collection for SkillSwap backend MVP (Supabase auth mode).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"firstName\": \"Sara\",\n  \"lastName\": \"Lee\",\n  \"institutionId\": \"{{institutionId}}\",\n  \"unitId\": \"{{unitId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/auth/signup",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json?.data?.session?.accessToken;",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('accessToken', token);",
+                  "}",
+                  "const userId = json?.data?.user?.id;",
+                  "if (userId) {",
+                  "  pm.collectionVariables.set('currentUserId', userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/auth/login",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/profile/me",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "profile",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sara\",\n  \"lastName\": \"Lee\",\n  \"bio\": \"Computer science student\",\n  \"department\": \"Engineering\",\n  \"academicYear\": 2\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/profile/me",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "profile",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Skills",
+      "item": [
+        {
+          "name": "List Skills",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/skills?search={{skillSearch}}&category={{skillCategory}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "skills"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{skillSearch}}"
+                },
+                {
+                  "key": "category",
+                  "value": "{{skillCategory}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add My Skill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": \"{{skillId}}\",\n  \"type\": \"OFFER\",\n  \"level\": \"ADVANCED\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/profile/me/skills",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "profile",
+                "me",
+                "skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete My Skill",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/profile/me/skills/{{userSkillId}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "profile",
+                "me",
+                "skills",
+                "{{userSkillId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search Candidates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/search?skillId={{skillId}}&unitId={{unitId}}&level={{requestedLevel}}&page=1&limit=20",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "skillId",
+                  "value": "{{skillId}}"
+                },
+                {
+                  "key": "unitId",
+                  "value": "{{unitId}}"
+                },
+                {
+                  "key": "level",
+                  "value": "{{requestedLevel}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "Create Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiverId\": \"{{receiverId}}\",\n  \"requestedSkillId\": \"{{skillId}}\",\n  \"offeredSkillId\": \"{{offeredSkillId}}\",\n  \"message\": \"I can help with Math in exchange for English.\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/requests",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "requests"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/requests?type={{requestType}}&status={{requestStatus}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "requests"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "{{requestType}}"
+                },
+                {
+                  "key": "status",
+                  "value": "{{requestStatus}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accept Or Decline Request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACCEPTED\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/requests/{{requestId}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Create Session For Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledAt\": \"2026-08-27T16:00:00Z\",\n  \"duration\": 60,\n  \"meetingType\": \"ONLINE\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/requests/{{requestId}}/session",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "requests",
+                "{{requestId}}",
+                "session"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/sessions?status={{sessionStatus}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{sessionStatus}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Session Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/sessions/{{sessionId}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"revieweeId\": \"{{revieweeId}}\",\n  \"rating\": 5,\n  \"comment\": \"Very helpful session.\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/sessions/{{sessionId}}/review",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}",
+                "review"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/admin/students?page=1&limit=20&status=ACTIVE&search={{studentSearch}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "admin",
+                "students"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                },
+                {
+                  "key": "search",
+                  "value": "{{studentSearch}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Student Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DISABLED\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/admin/students/{{studentId}}/status",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "admin",
+                "students",
+                "{{studentId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Skill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Database Systems\",\n  \"category\": \"Computer Science\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/admin/skills",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "admin",
+                "skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Skill",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Database Systems II\",\n  \"category\": \"Computer Science\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBase}}/admin/skills/{{adminSkillId}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "admin",
+                "skills",
+                "{{adminSkillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Skill (Soft Disable)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/admin/skills/{{adminSkillId}}",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "admin",
+                "skills",
+                "{{adminSkillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/admin/stats",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "apiBase",
+      "value": "http://localhost:4000/api"
+    },
+    {
+      "key": "email",
+      "value": "student1@example.com"
+    },
+    {
+      "key": "password",
+      "value": "strongpass123"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "adminAccessToken",
+      "value": ""
+    },
+    {
+      "key": "currentUserId",
+      "value": ""
+    },
+    {
+      "key": "institutionId",
+      "value": "11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "key": "unitId",
+      "value": "aaaa1111-1111-4111-8111-111111111111"
+    },
+    {
+      "key": "skillId",
+      "value": "30000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "offeredSkillId",
+      "value": "30000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "userSkillId",
+      "value": ""
+    },
+    {
+      "key": "receiverId",
+      "value": "90000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "revieweeId",
+      "value": "90000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    },
+    {
+      "key": "requestType",
+      "value": "incoming"
+    },
+    {
+      "key": "requestStatus",
+      "value": "PENDING"
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "sessionStatus",
+      "value": "SCHEDULED"
+    },
+    {
+      "key": "requestedLevel",
+      "value": "BEGINNER"
+    },
+    {
+      "key": "skillSearch",
+      "value": ""
+    },
+    {
+      "key": "skillCategory",
+      "value": ""
+    },
+    {
+      "key": "studentSearch",
+      "value": ""
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    },
+    {
+      "key": "adminSkillId",
+      "value": ""
+    }
+  ]
+}
