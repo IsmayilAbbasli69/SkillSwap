@@ -1,6 +1,7 @@
 const requestRepository = require("../repositories/request.repository");
 const profileRepository = require("../repositories/profile.repository");
 const skillRepository = require("../repositories/skill.repository");
+const userRepository = require("../repositories/user.repository");
 const { ensureEnum, ensureUuid } = require("../utils/validators");
 const HttpError = require("../utils/http-error");
 
@@ -104,10 +105,31 @@ const listRequests = async ({ currentUser, query }) => {
     const sender = await profileRepository.findById(row.sender_id);
     const receiver = await profileRepository.findById(row.receiver_id);
     const skill = await skillRepository.findSkillById(row.requested_skill_id);
+    const offeredSkill = row.offered_skill_id
+      ? await skillRepository.findSkillById(row.offered_skill_id)
+      : null;
+
+    // Determine who is the "peer" from the current user's perspective
+    const isCurrentUserSender = row.sender_id === currentUser.id;
+    const peerProfile = isCurrentUserSender ? receiver : sender;
+
+    // Disclose peer email only when request is ACCEPTED
+    let peerEmail = undefined;
+    if (row.status === "ACCEPTED" && peerProfile) {
+      const peerUser = await userRepository.findById(peerProfile.id);
+      peerEmail = peerUser ? peerUser.email : undefined;
+    }
 
     records.push({
       id: row.id,
       status: row.status,
+      message: row.message || null,
+      createdAt: row.created_at,
+      peer: peerProfile ? {
+        id: peerProfile.id,
+        name: `${peerProfile.first_name} ${peerProfile.last_name}`,
+        ...(peerEmail !== undefined && { email: peerEmail })
+      } : null,
       sender: {
         id: sender.id,
         name: `${sender.first_name} ${sender.last_name}`
@@ -116,10 +138,8 @@ const listRequests = async ({ currentUser, query }) => {
         id: receiver.id,
         name: `${receiver.first_name} ${receiver.last_name}`
       },
-      requestedSkill: {
-        id: skill.id,
-        name: skill.name
-      }
+      requestedSkill: skill ? { id: skill.id, name: skill.name } : null,
+      offeredSkill: offeredSkill ? { id: offeredSkill.id, name: offeredSkill.name } : null
     });
   }
 

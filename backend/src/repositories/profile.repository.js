@@ -73,32 +73,35 @@ const findSkillCandidates = async ({ institutionId, currentUserId, skillId, unit
     ADVANCED: 3
   };
 
-  let offerQuery = supabase
-    .from("user_skills")
-    .select("user_id, level")
-    .eq("skill_id", skillId)
-    .eq("type", "OFFER");
-
-  const { data: offerSkills, error: offerError } = await offerQuery;
-  if (offerError || !offerSkills || offerSkills.length === 0) return [];
-
-  const qualifiedUserIds = offerSkills
-    .filter(us => !level || levelRank[us.level] >= levelRank[level])
-    .map(us => us.user_id);
-
-  if (qualifiedUserIds.length === 0) return [];
-  const uniqueOfferingIds = Array.from(new Set(qualifiedUserIds));
-
   let profileQuery = supabase
     .from("profiles")
     .select("*")
-    .in("id", uniqueOfferingIds)
     .eq("institution_id", institutionId)
     .eq("status", "ACTIVE")
     .neq("id", currentUserId);
 
   if (unitId) {
     profileQuery = profileQuery.eq("unit_id", unitId);
+  }
+
+  // If skillId is provided, filter to only those who OFFER that skill
+  if (skillId) {
+    let offerQuery = supabase
+      .from("user_skills")
+      .select("user_id, level")
+      .eq("skill_id", skillId)
+      .eq("type", "OFFER");
+
+    const { data: offerSkills, error: offerError } = await offerQuery;
+    if (offerError || !offerSkills || offerSkills.length === 0) return [];
+
+    const qualifiedUserIds = offerSkills
+      .filter(us => !level || levelRank[us.level] >= levelRank[level])
+      .map(us => us.user_id);
+
+    if (qualifiedUserIds.length === 0) return [];
+    const uniqueOfferingIds = Array.from(new Set(qualifiedUserIds));
+    profileQuery = profileQuery.in("id", uniqueOfferingIds);
   }
 
   const { data: profiles, error: profError } = await profileQuery;
@@ -113,9 +116,9 @@ const findSkillCandidates = async ({ institutionId, currentUserId, skillId, unit
   if (skillsError) return [];
 
   return profiles.map(profile => {
-    const offer = candidateSkills.find(
+    const offer = skillId ? candidateSkills.find(
       us => us.user_id === profile.id && us.skill_id === skillId && us.type === "OFFER"
-    );
+    ) : null;
     const wants = candidateSkills.filter(
       us => us.user_id === profile.id && us.type === "WANT"
     );

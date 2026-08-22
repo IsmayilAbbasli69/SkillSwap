@@ -34,7 +34,9 @@ const createSession = async ({ currentUser, requestId, payload }) => {
     swapRequestId: requestId,
     scheduledAt: payload.scheduledAt,
     duration,
-    meetingType: payload.meetingType
+    meetingType: payload.meetingType,
+    meetingUrl: payload.meetingUrl || null,
+    locationNote: payload.locationNote || null
   });
 
   return {
@@ -43,6 +45,8 @@ const createSession = async ({ currentUser, requestId, payload }) => {
     scheduledAt: row.scheduled_at,
     duration: row.duration,
     meetingType: row.meeting_type,
+    meetingUrl: row.meeting_url || null,
+    locationNote: row.location_note || null,
     status: row.status
   };
 };

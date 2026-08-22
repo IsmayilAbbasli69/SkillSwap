@@ -104,3 +104,11 @@ CREATE TABLE IF NOT EXISTS public.reviews (
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(session_id, reviewer_id)
 );
+
+-- ==============================================================================
+-- MIGRATION: If tables already exist, run these ALTER statements
+-- (Only needed if you created the schema BEFORE v1.1)
+-- ==============================================================================
+-- ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS meeting_url TEXT;
+-- ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS location_note TEXT;
+
