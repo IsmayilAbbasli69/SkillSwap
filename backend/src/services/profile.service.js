@@ -106,6 +106,20 @@ const getPeerProfile = async (currentUser, targetUserId) => {
   const skills = await buildSkillsArray(profile.id);
   const stats = await sessionRepository.getUserReviewStats(profile.id);
   const recentReviews = await sessionRepository.getRecentReviews(profile.id, 5);
+  const reviewsWithReviewers = await Promise.all(recentReviews.map(async review => {
+    const reviewer = review.reviewer_id
+      ? await profileRepository.findById(review.reviewer_id)
+      : null;
+    return {
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: review.created_at,
+      reviewer: reviewer ? {
+        id: reviewer.id,
+        name: `${reviewer.first_name} ${reviewer.last_name}`
+      } : null
+    };
+  }));
 
   return {
     id: profile.id,
@@ -117,11 +131,7 @@ const getPeerProfile = async (currentUser, targetUserId) => {
     averageRating: stats.averageRating,
     totalReviews: stats.totalReviews,
     skills,
-    recentReviews: recentReviews.map(r => ({
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.created_at
-    }))
+    recentReviews: reviewsWithReviewers
   };
 };
 

@@ -3,25 +3,20 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SessionsPage } from './SessionsPage'
-import { completedSessionFixture, requestFixture } from '../test/fixtures'
+import { completedSessionFixture } from '../test/fixtures'
 
 const sessionApiMocks = vi.hoisted(() => ({
   listSessions: vi.fn(),
   submitReview: vi.fn(),
   updateSession: vi.fn(),
 }))
-const requestApiMocks = vi.hoisted(() => ({ listSwapRequests: vi.fn() }))
 
 vi.mock('../api/sessions', () => sessionApiMocks)
-vi.mock('../api/requests', () => requestApiMocks)
 
 describe('SessionsPage review flow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionApiMocks.listSessions.mockResolvedValue([completedSessionFixture])
-    requestApiMocks.listSwapRequests.mockResolvedValue([
-      { ...requestFixture, status: 'ACCEPTED' },
-    ])
   })
 
   it('does not submit a review without a rating', async () => {
@@ -32,7 +27,10 @@ describe('SessionsPage review flow', () => {
       </MemoryRouter>,
     )
 
-    await user.click(await screen.findByRole('button', { name: 'Leave a review' }))
+    expect(await screen.findByText('with Maya Johnson')).toBeInTheDocument()
+    expect(screen.getByText(/English/)).toHaveTextContent('English ↔ Mathematics')
+    await user.click(screen.getByRole('button', { name: 'Add Review' }))
+    expect(screen.getByRole('heading', { name: 'Review Maya Johnson' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Submit review' }))
 
     expect(screen.getByText('Choose a rating from 1 to 5 stars.')).toBeInTheDocument()
@@ -52,7 +50,7 @@ describe('SessionsPage review flow', () => {
       </MemoryRouter>,
     )
 
-    await user.click(await screen.findByRole('button', { name: 'Leave a review' }))
+    await user.click(await screen.findByRole('button', { name: 'Add Review' }))
     await user.click(screen.getByRole('radio', { name: '5 stars' }))
     await user.type(screen.getByLabelText(/Comment/), 'A very useful session.')
     await user.click(screen.getByRole('button', { name: 'Submit review' }))
@@ -60,7 +58,7 @@ describe('SessionsPage review flow', () => {
     expect(sessionApiMocks.submitReview).toHaveBeenCalledWith(
       completedSessionFixture.id,
       {
-        revieweeId: requestFixture.peer.id,
+        revieweeId: completedSessionFixture.peer!.id,
         rating: 5,
         comment: 'A very useful session.',
       },

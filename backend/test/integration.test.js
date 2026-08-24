@@ -50,4 +50,27 @@ test("auth, authorization, signup and shared request lifecycle", async () => {
   assert.equal((await request("/requests?type=incoming", { token: maya })).json.data[0].id, id);
   assert.equal((await request(`/requests/${id}`, { method: "PATCH", token: maya, body: { status: "ACCEPTED" } })).json.data.status, "ACCEPTED");
   assert.equal((await request("/requests?type=outgoing", { token: john })).json.data[0].status, "ACCEPTED");
+
+  const scheduled = await request(`/requests/${id}/session`, { method: "POST", token: john, body: { scheduledAt: "2026-08-24T12:00:00.000Z", duration: 60, meetingType: "ONLINE", meetingUrl: "https://meet.example.test/session" } });
+  assert.equal(scheduled.response.status, 201);
+  const sessionId = scheduled.json.data.id;
+  await request(`/sessions/${sessionId}`, { method: "PATCH", token: john, body: { status: "COMPLETED" } });
+
+  const johnSession = (await request("/sessions?status=COMPLETED", { token: john })).json.data.find(session => session.id === sessionId);
+  const mayaSession = (await request("/sessions?status=COMPLETED", { token: maya })).json.data.find(session => session.id === sessionId);
+  assert.deepEqual(johnSession.peer, { id: "90000000-0000-4000-8000-000000000002", name: "Maya Johnson" });
+  assert.deepEqual(mayaSession.peer, { id: "90000000-0000-4000-8000-000000000001", name: "John Smith" });
+  assert.equal(johnSession.requestedSkill.name, "English");
+  assert.equal(johnSession.offeredSkill.name, "Mathematics");
+  assert.equal(johnSession.reviewSubmitted, false);
+
+  const submitted = await request(`/sessions/${sessionId}/review`, { method: "POST", token: john, body: { revieweeId: johnSession.peer.id, rating: 5, comment: "Great" } });
+  assert.equal(submitted.response.status, 201);
+  const refreshedJohnSession = (await request("/sessions?status=COMPLETED", { token: john })).json.data.find(session => session.id === sessionId);
+  assert.equal(refreshedJohnSession.reviewSubmitted, true);
+
+  const mayaProfile = await request("/users/90000000-0000-4000-8000-000000000002", { token: john });
+  const publicReview = mayaProfile.json.data.recentReviews.find(review => review.comment === "Great");
+  assert.deepEqual(publicReview.reviewer, { id: "90000000-0000-4000-8000-000000000001", name: "John Smith" });
+  assert.equal(publicReview.reviewer.email, undefined);
 });

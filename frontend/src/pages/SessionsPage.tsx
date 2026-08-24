@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { normalizeApiError } from '../api/errors'
-import { listSwapRequests } from '../api/requests'
 import { listSessions, submitReview, updateSession } from '../api/sessions'
-import type { RequestPeer, Session, SessionStatus, SubmittedReview } from '../api/types'
+import type { Session, SessionStatus, SubmittedReview } from '../api/types'
 import { StarRatingInput } from '../components/StarRatingInput'
 import { FeedbackBanner } from '../components/FeedbackBanner'
 import { formatDateTime } from '../utils/date-time'
@@ -14,8 +13,6 @@ type SessionsState =
       key: string
       status: 'loaded'
       sessions: Session[]
-      peersByRequestId: Record<string, RequestPeer>
-      peerMappingError: string | null
     }
   | { key: string; status: 'error'; message: string }
 
@@ -34,36 +31,19 @@ export function SessionsPage() {
   const [mutatingId, setMutatingId] = useState<string | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [reviewSession, setReviewSession] = useState<{ session: Session; revieweeId: string } | null>(null)
-  const [reviewedSessionIds, setReviewedSessionIds] = useState<Set<string>>(() => new Set())
+  const [reviewSession, setReviewSession] = useState<Session | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    const sessionsPromise = listSessions({ status: activeStatus })
-    const requestsPromise = activeStatus === 'COMPLETED' ? listSwapRequests() : Promise.resolve([])
-
-    void Promise.allSettled([sessionsPromise, requestsPromise]).then(([sessionsResult, requestsResult]) => {
+    void listSessions({ status: activeStatus }).then((loadedSessions) => {
       if (cancelled) return
-      if (sessionsResult.status === 'rejected') {
-        setState({ key: requestKey, status: 'error', message: normalizeApiError(sessionsResult.reason).message })
-        return
-      }
-
-      const peersByRequestId: Record<string, RequestPeer> = {}
-      let peerMappingError: string | null = null
-      if (requestsResult.status === 'fulfilled') {
-        for (const request of requestsResult.value) peersByRequestId[request.id] = request.peer
-      } else {
-        peerMappingError = normalizeApiError(requestsResult.reason).message
-      }
-
       setState({
         key: requestKey,
         status: 'loaded',
-        sessions: [...sessionsResult.value].sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt)),
-        peersByRequestId,
-        peerMappingError,
+        sessions: [...loadedSessions].sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt)),
       })
+    }).catch((error) => {
+      if (!cancelled) setState({ key: requestKey, status: 'error', message: normalizeApiError(error).message })
     })
 
     return () => {
@@ -113,7 +93,6 @@ export function SessionsPage() {
 
       {mutationError && <FeedbackBanner tone="error" message={mutationError} onDismiss={() => setMutationError(null)} />}
       {notice && <FeedbackBanner tone="success" message={notice} onDismiss={() => setNotice(null)} />}
-      {state.status === 'loaded' && state.peerMappingError && activeStatus === 'COMPLETED' && <FeedbackBanner tone="warning" message="Sessions loaded, but peer identities for reviews could not be resolved. Review actions are temporarily unavailable." />}
 
       {isLoading ? (
         <SessionsLoading />
@@ -123,20 +102,16 @@ export function SessionsPage() {
         <EmptyState status={activeStatus} />
       ) : state.status === 'loaded' ? (
         <ul className="grid gap-5 xl:grid-cols-2">
-          {sessions.map((session) => {
-            const revieweeId = state.peersByRequestId[session.requestId]?.id
-            return <SessionCard key={session.id} session={session} isMutating={mutatingId === session.id} mutationsDisabled={mutatingId !== null} revieweeId={revieweeId} reviewSubmitted={reviewedSessionIds.has(session.id)} onStatusUpdate={handleStatusUpdate} onReview={() => revieweeId && setReviewSession({ session, revieweeId })} />
-          })}
+          {sessions.map((session) => <SessionCard key={session.id} session={session} isMutating={mutatingId === session.id} mutationsDisabled={mutatingId !== null} onStatusUpdate={handleStatusUpdate} onReview={() => session.peer && setReviewSession(session)} />)}
         </ul>
       ) : null}
 
-      {reviewSession?.session.status === 'COMPLETED' && (
+      {reviewSession?.status === 'COMPLETED' && reviewSession.peer && (
         <ReviewDialog
-          session={reviewSession.session}
-          revieweeId={reviewSession.revieweeId}
+          session={reviewSession as Session & { peer: NonNullable<Session['peer']> }}
           onClose={() => setReviewSession(null)}
           onReviewed={() => {
-            setReviewedSessionIds((current) => new Set(current).add(reviewSession.session.id))
+            setState((current) => current.status === 'loaded' ? { ...current, sessions: current.sessions.map((session) => session.id === reviewSession.id ? { ...session, reviewSubmitted: true } : session) } : current)
             setNotice('Review submitted successfully.')
           }}
         />
@@ -145,13 +120,15 @@ export function SessionsPage() {
   )
 }
 
-function SessionCard({ session, isMutating, mutationsDisabled, revieweeId, reviewSubmitted, onStatusUpdate, onReview }: { session: Session; isMutating: boolean; mutationsDisabled: boolean; revieweeId?: string; reviewSubmitted: boolean; onStatusUpdate: (id: string, status: 'COMPLETED' | 'CANCELLED') => Promise<void>; onReview: () => void }) {
+function SessionCard({ session, isMutating, mutationsDisabled, onStatusUpdate, onReview }: { session: Session; isMutating: boolean; mutationsDisabled: boolean; onStatusUpdate: (id: string, status: 'COMPLETED' | 'CANCELLED') => Promise<void>; onReview: () => void }) {
   const meetingUrlIsSafe = session.meetingUrl ? isHttpUrl(session.meetingUrl) : false
   return (
     <li className="flex min-w-0 flex-col overflow-hidden rounded-[2rem] border border-white bg-white shadow-lg shadow-teal-900/7">
       <div className={`h-2 ${session.status === 'SCHEDULED' ? 'bg-coral-400' : session.status === 'COMPLETED' ? 'bg-teal-500' : 'bg-slate-300'}`} />
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-teal-600">{session.meetingType === 'ONLINE' ? 'Online session' : 'In-person session'}</p><h2 className="mt-2 text-xl font-extrabold">{formatDateTime(session.scheduledAt)}</h2><p className="mt-1 text-sm text-slate-500">{session.duration} minutes</p></div><StatusBadge status={session.status} /></div>
+        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-teal-600">{session.status === 'COMPLETED' ? 'Completed session' : session.meetingType === 'ONLINE' ? 'Online session' : 'In-person session'}</p><h2 className="mt-2 text-xl font-extrabold">{session.peer ? `with ${session.peer.name}` : 'Peer unavailable'}</h2><p className="mt-1 text-sm text-slate-500">{formatDateTime(session.scheduledAt)} · {session.duration} minutes</p></div><StatusBadge status={session.status} /></div>
+
+        {(session.requestedSkill || session.offeredSkill) && <p className="mt-4 rounded-xl bg-teal-50 px-4 py-3 text-sm font-bold text-teal-800">{session.requestedSkill?.name ?? 'Skill not specified'} <span className="px-1 text-coral-500" aria-hidden="true">↔</span> {session.offeredSkill?.name ?? 'No exchange skill'}</p>}
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-2"><Fact label="Meeting type" value={session.meetingType === 'ONLINE' ? 'Online' : 'In person'} /><Fact label="Duration" value={`${session.duration} minutes`} /></dl>
 
@@ -163,14 +140,14 @@ function SessionCard({ session, isMutating, mutationsDisabled, revieweeId, revie
 
         <div className="mt-auto pt-6">
           {session.status === 'SCHEDULED' && <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-5"><button type="button" disabled={mutationsDisabled} onClick={() => void onStatusUpdate(session.id, 'CANCELLED')} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50">{isMutating ? 'Updating…' : 'Cancel session'}</button><button type="button" disabled={mutationsDisabled} onClick={() => void onStatusUpdate(session.id, 'COMPLETED')} className="min-h-11 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-50">{isMutating ? 'Updating…' : 'Mark completed'}</button></div>}
-          {session.status === 'COMPLETED' && (reviewSubmitted ? <p className="rounded-xl bg-teal-50 px-4 py-3 text-center text-sm font-bold text-teal-700">✓ Review submitted</p> : <><button type="button" disabled={!revieweeId} onClick={onReview} className="min-h-11 w-full rounded-xl bg-coral-500 px-5 py-3 text-sm font-bold text-white shadow-md shadow-coral-500/20 hover:bg-coral-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral-100 disabled:cursor-not-allowed disabled:opacity-50">Leave a review</button>{!revieweeId && <p className="mt-2 text-center text-xs leading-5 text-slate-500">Peer identity is unavailable, so a valid review cannot be submitted.</p>}</>)}
+          {session.status === 'COMPLETED' && (session.reviewSubmitted ? <p className="rounded-xl bg-teal-50 px-4 py-3 text-center text-sm font-bold text-teal-700">✓ Review submitted</p> : <><button type="button" disabled={!session.peer} onClick={onReview} className="min-h-11 w-full rounded-xl bg-coral-500 px-5 py-3 text-sm font-bold text-white shadow-md shadow-coral-500/20 hover:bg-coral-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral-100 disabled:cursor-not-allowed disabled:opacity-50">Add Review</button>{!session.peer && <p className="mt-2 text-center text-xs leading-5 text-slate-500">Peer identity is unavailable, so a valid review cannot be submitted.</p>}</>)}
         </div>
       </div>
     </li>
   )
 }
 
-function ReviewDialog({ session, revieweeId, onClose, onReviewed }: { session: Session; revieweeId: string; onClose: () => void; onReviewed: () => void }) {
+function ReviewDialog({ session, onClose, onReviewed }: { session: Session & { peer: NonNullable<Session['peer']> }; onClose: () => void; onReviewed: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const submittingRef = useRef(false)
   const [rating, setRating] = useState(0)
@@ -200,7 +177,7 @@ function ReviewDialog({ session, revieweeId, onClose, onReviewed }: { session: S
     setIsSubmitting(true)
     setError(null)
     try {
-      const submitted = await submitReview(session.id, { revieweeId, rating, ...(comment ? { comment } : {}) })
+      const submitted = await submitReview(session.id, { revieweeId: session.peer.id, rating, ...(comment ? { comment } : {}) })
       setReview(submitted)
       onReviewed()
     } catch (requestError) {
@@ -213,7 +190,7 @@ function ReviewDialog({ session, revieweeId, onClose, onReviewed }: { session: S
 
   return (
     <dialog ref={dialogRef} aria-labelledby="review-session-title" onCancel={onClose} className="m-auto max-h-[92dvh] w-[min(94vw,36rem)] overflow-y-auto rounded-[2rem] border-0 bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/55 backdrop:backdrop-blur-sm">
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-7"><div><p className="text-xs font-bold uppercase tracking-wider text-coral-500">Completed session</p><h2 id="review-session-title" className="mt-1 text-xl font-extrabold">Share your experience</h2></div><button type="button" onClick={onClose} className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-50 text-xl hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-200" aria-label="Close review form">×</button></header>
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-7"><div><p className="text-xs font-bold uppercase tracking-wider text-coral-500">Completed session</p><h2 id="review-session-title" className="mt-1 text-xl font-extrabold">Review {session.peer.name}</h2><p className="mt-1 text-sm text-slate-500">Share your experience from your SkillSwap session with {session.peer.name.split(' ')[0]}.</p></div><button type="button" onClick={onClose} className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-50 text-xl hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-200" aria-label="Close review form">×</button></header>
       {review ? <div className="p-7 text-center"><span className="mx-auto grid size-16 place-items-center rounded-2xl bg-teal-100 text-3xl text-teal-700" aria-hidden="true">✓</span><h3 className="mt-5 text-2xl font-extrabold">Thank you</h3><p role="status" className="mt-2 leading-7 text-slate-600">Your {review.rating}-star review was submitted successfully.</p><button type="button" onClick={onClose} className="mt-7 rounded-xl bg-teal-600 px-6 py-3 font-bold text-white">Done</button></div> : <form noValidate onSubmit={handleSubmit} className="space-y-6 p-5 sm:p-7">{error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{error}</p>}<StarRatingInput value={rating} onChange={setRating} disabled={isSubmitting} /><div><label htmlFor="review-comment" className="mb-2 flex justify-between gap-3 text-sm font-bold"><span>Comment</span><span className="text-xs font-medium text-slate-400">Optional</span></label><textarea id="review-comment" name="comment" rows={5} placeholder="What made this session helpful?" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-100" /></div><button type="submit" disabled={isSubmitting} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-coral-500 px-5 py-3 font-bold text-white shadow-lg shadow-coral-500/20 hover:bg-coral-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral-100 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting && <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{isSubmitting ? 'Submitting…' : 'Submit review'}</button></form>}
     </dialog>
   )

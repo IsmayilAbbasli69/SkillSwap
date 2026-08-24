@@ -119,7 +119,7 @@ const getRecentReviews = async (userId, limit = 5) => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("rating, comment, created_at")
+    .select("rating, comment, created_at, reviewer_id")
     .eq("reviewee_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);

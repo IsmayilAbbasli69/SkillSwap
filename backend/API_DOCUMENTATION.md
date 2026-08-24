@@ -269,7 +269,11 @@ Fetches a peer student's public profile — including their skills, rating, and 
       {
         "rating": 5,
         "comment": "Excellent tutor in Python data structures!",
-        "createdAt": "2026-08-10T12:00:00.000Z"
+        "createdAt": "2026-08-10T12:00:00.000Z",
+        "reviewer": {
+          "id": "6aae7059-383b-43f5-a7f6-24e57a3fcd2f",
+          "name": "John Smith"
+        }
       }
     ]
   }
@@ -510,11 +514,29 @@ Fetches all sessions the user participates in.
       "meetingType": "ONLINE",
       "meetingUrl": "https://meet.google.com/abc-defg-hij",
       "locationNote": null,
-      "status": "SCHEDULED"
+      "status": "SCHEDULED",
+      "peer": {
+        "id": "88888888-8888-4888-8888-888888888888",
+        "name": "Maya Johnson"
+      },
+      "requestedSkill": {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "English"
+      },
+      "offeredSkill": {
+        "id": "55555555-5555-4555-8555-555555555555",
+        "name": "Mathematics"
+      },
+      "reviewSubmitted": false
     }
   ]
 }
 ```
+
+`peer` is always the other request participant relative to the authenticated
+user. `offeredSkill` may be `null`. `reviewSubmitted` indicates whether the
+authenticated user has already reviewed this session. Public peer and reviewer
+objects never include email or private contact information.
 
 ---
 

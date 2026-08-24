@@ -55,4 +55,8 @@ export const completedSessionFixture: Session = {
   meetingUrl: 'https://meet.example.com/session',
   locationNote: null,
   status: 'COMPLETED',
+  peer: { id: 'peer-user', name: 'Maya Johnson' },
+  requestedSkill: { id: 'skill-english', name: 'English' },
+  offeredSkill: { id: 'skill-math', name: 'Mathematics' },
+  reviewSubmitted: false,
 }

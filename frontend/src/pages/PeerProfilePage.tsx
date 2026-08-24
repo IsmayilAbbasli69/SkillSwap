@@ -175,7 +175,11 @@ function SkillList({ title, description, skills, tone }: { title: string; descri
 }
 
 function ReviewsSection({ reviews }: { reviews: PeerProfile['recentReviews'] }) {
-  return <article className="rounded-[2rem] border border-white bg-white p-5 shadow-lg shadow-teal-900/6 sm:p-7"><div><h2 className="text-xl font-extrabold">Recent reviews</h2><p className="mt-1 text-sm text-slate-500">Feedback returned on this student’s public profile.</p></div>{reviews.length === 0 ? <p className="mt-6 rounded-2xl border border-dashed border-slate-200 px-5 py-9 text-center text-sm text-slate-500">No recent reviews yet.</p> : <ul className="mt-6 grid gap-4 md:grid-cols-2">{reviews.map((review, index) => <li key={`${review.createdAt}-${index}`} className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50/70 p-5"><StarRating rating={review.rating} /><p className="mt-3 break-words leading-7 text-slate-600">{review.comment || 'No written comment.'}</p><time dateTime={review.createdAt} className="mt-4 block text-xs font-semibold text-slate-400">{formatDate(review.createdAt)}</time></li>)}</ul>}</article>
+  return <article className="rounded-[2rem] border border-white bg-white p-5 shadow-lg shadow-teal-900/6 sm:p-7"><div><h2 className="text-xl font-extrabold">Recent reviews</h2><p className="mt-1 text-sm text-slate-500">Feedback returned on this student’s public profile.</p></div>{reviews.length === 0 ? <p className="mt-6 rounded-2xl border border-dashed border-slate-200 px-5 py-9 text-center text-sm text-slate-500">No recent reviews yet.</p> : <ul className="mt-6 grid gap-4 md:grid-cols-2">{reviews.map((review, index) => <ReviewCard key={`${review.createdAt}-${index}`} review={review} />)}</ul>}</article>
+}
+
+function ReviewCard({ review }: { review: PeerProfile['recentReviews'][number] }) {
+  return <li className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50/70 p-5"><StarRating rating={review.rating} /><p className="mt-3 break-words leading-7 text-slate-600">{review.comment || 'No written comment.'}</p><p className="mt-4 text-sm font-semibold text-slate-600">{review.reviewer?.name ?? 'SkillSwap member'}</p><time dateTime={review.createdAt} className="mt-1 block text-xs font-semibold text-slate-400">{formatDate(review.createdAt)}</time></li>
 }
 
 function StarRating({ rating }: { rating: number }) {

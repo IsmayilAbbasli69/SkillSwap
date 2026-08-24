@@ -133,6 +133,7 @@ export interface PeerReview {
   rating: number
   comment: string
   createdAt: string
+  reviewer?: RequestPerson | null
 }
 
 export interface PeerProfile {
@@ -266,6 +267,10 @@ export interface Session {
   meetingUrl: string | null
   locationNote: string | null
   status: SessionStatus
+  peer: RequestPerson | null
+  requestedSkill: RequestSkill | null
+  offeredSkill: RequestSkill | null
+  reviewSubmitted: boolean
 }
 
 export interface ListSessionsParams {

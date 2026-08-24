@@ -1,7 +1,36 @@
 const requestRepository = require("../repositories/request.repository");
 const sessionRepository = require("../repositories/session.repository");
+const profileRepository = require("../repositories/profile.repository");
+const skillRepository = require("../repositories/skill.repository");
 const { ensureEnum, ensureUuid } = require("../utils/validators");
 const HttpError = require("../utils/http-error");
+
+const toSkillSummary = skill => skill ? { id: skill.id, name: skill.name } : null;
+
+const toSessionResponse = async ({ session, request, currentUser }) => {
+  const peerId = request.sender_id === currentUser.id ? request.receiver_id : request.sender_id;
+  const [peer, requestedSkill, offeredSkill, myReview] = await Promise.all([
+    profileRepository.findById(peerId),
+    skillRepository.findSkillById(request.requested_skill_id),
+    request.offered_skill_id ? skillRepository.findSkillById(request.offered_skill_id) : null,
+    sessionRepository.findReviewBySessionAndReviewer({ sessionId: session.id, reviewerId: currentUser.id })
+  ]);
+
+  return {
+    id: session.id,
+    requestId: session.swap_request_id,
+    scheduledAt: session.scheduled_at,
+    duration: session.duration,
+    meetingType: session.meeting_type,
+    meetingUrl: session.meeting_url || null,
+    locationNote: session.location_note || null,
+    status: session.status,
+    peer: peer ? { id: peer.id, name: `${peer.first_name} ${peer.last_name}` } : null,
+    requestedSkill: toSkillSummary(requestedSkill),
+    offeredSkill: toSkillSummary(offeredSkill),
+    reviewSubmitted: Boolean(myReview)
+  };
+};
 
 const createSession = async ({ currentUser, requestId, payload }) => {
   ensureUuid(requestId, "requestId");
@@ -39,16 +68,7 @@ const createSession = async ({ currentUser, requestId, payload }) => {
     locationNote: payload.locationNote || null
   });
 
-  return {
-    id: row.id,
-    requestId: row.swap_request_id,
-    scheduledAt: row.scheduled_at,
-    duration: row.duration,
-    meetingType: row.meeting_type,
-    meetingUrl: row.meeting_url || null,
-    locationNote: row.location_note || null,
-    status: row.status
-  };
+  return toSessionResponse({ session: row, request, currentUser });
 };
 
 const listSessions = async ({ currentUser, query }) => {
@@ -64,16 +84,12 @@ const listSessions = async ({ currentUser, query }) => {
     sessions = sessions.filter(session => session.status === query.status);
   }
 
-  return sessions.map(session => ({
-    id: session.id,
-    requestId: session.swap_request_id,
-    scheduledAt: session.scheduled_at,
-    duration: session.duration,
-    meetingType: session.meeting_type,
-    meetingUrl: session.meeting_url || null,
-    locationNote: session.location_note || null,
-    status: session.status
-  }));
+  const requestsById = new Map(requests.map(request => [request.id, request]));
+  return Promise.all(sessions.map(session => toSessionResponse({
+    session,
+    request: requestsById.get(session.swap_request_id),
+    currentUser
+  })));
 };
 
 const updateSessionStatus = async ({ currentUser, sessionId, payload }) => {
