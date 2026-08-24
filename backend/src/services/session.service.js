@@ -70,6 +70,8 @@ const listSessions = async ({ currentUser, query }) => {
     scheduledAt: session.scheduled_at,
     duration: session.duration,
     meetingType: session.meeting_type,
+    meetingUrl: session.meeting_url || null,
+    locationNote: session.location_note || null,
     status: session.status
   }));
 };

@@ -25,7 +25,7 @@ const paginateArray = ({ items, page, limit }) => {
 
   return {
     data: items.slice(start, end),
-    meta: { page, limit, total }
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
   };
 };
 

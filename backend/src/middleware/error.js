@@ -3,6 +3,10 @@ const errorMiddleware = (err, _req, res, _next) => {
   const message =
     status === 500 ? "Internal server error" : err.message || "Unexpected error";
 
+  if (status >= 500) {
+    console.error(err.stack || err);
+  }
+
   res.status(status).json({
     error: {
       code: err.code || "INTERNAL_ERROR",

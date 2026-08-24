@@ -199,7 +199,7 @@ export function DiscoverPage() {
 function PeerCard({ result }: { result: StudentSearchResult }) {
   const quality = getMatchQuality(result.match.score)
   const tone = quality === 'Excellent Match' ? 'bg-teal-100 text-teal-700' : quality === 'Good Match' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-800'
-  const unitName = result.profile.unit.name
+  const unitName = result.profile.unit?.name
 
   return (
     <li className="group flex min-w-0 flex-col overflow-hidden rounded-[2rem] border border-white bg-white shadow-lg shadow-teal-900/7 transition hover:-translate-y-1 hover:shadow-xl">

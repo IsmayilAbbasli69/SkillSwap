@@ -6,14 +6,15 @@ Backend-only MVP implementation of the SkillSwap PRD/TDD.
 
 - Node.js
 - Express
-- Supabase Auth
-- In-memory repository layer seeded from JSON
+- Local JWT authentication with a persisted development data store, or Supabase Auth
+- Repository layer backed by the selected development/production data provider
 - Swagger UI for endpoint testing
 
 ## Run
 
 ```bash
 npm install
+npm run seed:dev
 npm run dev
 ```
 
@@ -25,11 +26,23 @@ Server:
 
 ## Authentication
 
-Set these environment variables before running:
+Copy `.env.example` to `.env`. For local development use:
 
-- `AUTH_MODE=supabase`
-- `SUPABASE_URL=<your-project-url>`
-- `SUPABASE_ANON_KEY=<your-anon-key>`
+- `AUTH_MODE=local`
+- `JWT_SECRET=<a long random development secret>`
+
+Local mode uses local password hashes, local JWT issuance/verification, and the
+same profile IDs throughout. `npm run seed:dev` safely resets development data
+and creates these development-only accounts (password `Password123!`):
+
+- `student@skillswap.test` (`STUDENT`)
+- `maya@skillswap.test` (`STUDENT`)
+- `admin@skillswap.test` (`ADMIN`)
+
+For Supabase mode set `AUTH_MODE=supabase`, `SUPABASE_URL`, and
+`SUPABASE_ANON_KEY`. Set `SUPABASE_SERVICE_ROLE_KEY` on the backend when profile
+bootstrap/admin operations require it. React always talks to Express; it never
+receives a Supabase key.
 
 ### Signup
 
@@ -74,6 +87,6 @@ Use the returned access token for protected endpoints:
 ## Notes
 
 - Tenant scope is always derived from authenticated profile.
-- Data is reset on server restart because repositories are in-memory.
+- Local data is shared by clients and persisted in `backend/.data/local-db.json`.
+- Reset it explicitly with `npm run seed:dev`; `.data` is git-ignored.
 - Architecture follows routes -> controllers -> services -> repositories.
-- Existing seeded users are local mock data, not Supabase accounts.

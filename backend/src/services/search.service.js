@@ -1,6 +1,7 @@
 const profileRepository = require("../repositories/profile.repository");
 const skillRepository = require("../repositories/skill.repository");
 const sessionRepository = require("../repositories/session.repository");
+const adminRepository = require("../repositories/admin.repository");
 const matchingService = require("./matching.service");
 const { paginateArray, buildPagination } = require("../utils/pagination");
 const { ensureUuid, ensureEnum } = require("../utils/validators");
@@ -38,6 +39,7 @@ const searchStudents = async ({ currentUser, skillId, unitId, level, page, limit
   const myOfferedSkillIds = mySkills
     .filter(userSkill => userSkill.type === "OFFER")
     .map(userSkill => userSkill.skill_id);
+  const units = await adminRepository.listUnitsByInstitutionId(currentUser.institutionId);
 
   const ranked = await Promise.all(
     candidates.map(async candidate => {
@@ -59,10 +61,10 @@ const searchStudents = async ({ currentUser, skillId, unitId, level, page, limit
           bio: candidate.profile.bio,
           department: candidate.profile.department,
           averageRating: stats.averageRating,
-          unit: {
+          unit: candidate.profile.unit_id ? {
             id: candidate.profile.unit_id,
-            name: null
-          }
+            name: units.find(unit => unit.id === candidate.profile.unit_id)?.name || null
+          } : null
         },
         offeredSkill: skill && candidate.offeredSkill ? {
           id: skill.id,

@@ -136,7 +136,7 @@ function WelcomePanel({ state }: { state: Loadable<MyProfile> }) {
   }
 
   const { data: profile } = state
-  const location = profile.unit.name ?? profile.department
+  const location = profile.unit?.name ?? profile.department
   return (
     <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-teal-700 via-teal-600 to-teal-500 p-7 text-white shadow-xl shadow-teal-900/15 sm:p-9">
       <div aria-hidden="true" className="absolute -right-12 -top-20 size-56 rounded-full border-[28px] border-white/8" />
@@ -185,7 +185,9 @@ function MatchesCard({ state, hasWantedSkills, onRetry }: { state: Loadable<Stud
         <EmptyMessage>{hasWantedSkills ? 'No matching peers were found for your current wanted skills.' : 'Add a skill you want help with to receive recommendations.'}</EmptyMessage>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {state.data.map((match) => (
+          {state.data.map((match) => {
+            const firstReason = match.match.reasons.length > 0 ? match.match.reasons[0] : null
+            return (
             <li key={match.profile.id} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-teal-100 font-extrabold text-teal-700" aria-hidden="true">{match.profile.name.charAt(0).toUpperCase()}</span>
@@ -194,9 +196,10 @@ function MatchesCard({ state, hasWantedSkills, onRetry }: { state: Loadable<Stud
               <h3 className="mt-4 truncate font-extrabold">{match.profile.name}</h3>
               <p className="mt-1 truncate text-sm text-slate-500">{match.profile.department}</p>
               {match.offeredSkill && <p className="mt-3 text-sm font-semibold text-ink">Offers {match.offeredSkill.name} · <span className="capitalize text-slate-500">{match.offeredSkill.level.toLowerCase()}</span></p>}
-              {match.match.reasons[0] && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{match.match.reasons[0]}</p>}
+              {firstReason ? <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{firstReason}</p> : <p className="mt-2 text-xs text-slate-500">Browse their profile to learn more.</p>}
             </li>
-          ))}
+            )
+          })}
         </ul>
       )}
     </DashboardCard>

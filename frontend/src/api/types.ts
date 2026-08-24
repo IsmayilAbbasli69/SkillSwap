@@ -104,7 +104,7 @@ export interface MyProfile {
   averageRating: number
   totalReviews: number
   institution: InstitutionSummary
-  unit: UnitSummary
+  unit: UnitSummary | null
   skills: UserSkill[]
 }
 
@@ -173,7 +173,7 @@ export interface SearchProfile {
   bio: string
   department: string
   averageRating: number
-  unit: UnitSummary
+  unit: UnitSummary | null
 }
 
 export interface SearchOfferedSkill {

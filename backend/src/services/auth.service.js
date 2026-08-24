@@ -61,6 +61,29 @@ const signup = async payload => {
     unitId: payload.unitId
   });
 
+  if (env.authMode === "supabase") {
+    const { getSupabaseClient, isSupabaseConfigured } = require("../config/supabase");
+    if (!isSupabaseConfigured()) throw new HttpError(500, "CONFIG_ERROR", "Supabase authentication is not configured");
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.auth.signUp({ email: payload.email, password: payload.password });
+    if (error) {
+      const duplicate = /already|registered/i.test(error.message || "");
+      throw new HttpError(duplicate ? 409 : 502, duplicate ? "CONFLICT" : "AUTH_PROVIDER_ERROR", duplicate ? "User already exists" : "Authentication provider failed");
+    }
+    if (!data.user) throw new HttpError(502, "AUTH_PROVIDER_ERROR", "Authentication provider did not create a user");
+    try {
+      await profileRepository.create({ id: data.user.id, institutionId, unitId: payload.unitId || null, firstName: payload.firstName, lastName: payload.lastName, bio: payload.bio || "", department: payload.department || null, academicYear: payload.academicYear || null, role: "STUDENT", status: "ACTIVE" });
+    } catch (error) {
+      if (env.supabaseServiceRoleKey) await supabase.auth.admin.deleteUser(data.user.id);
+      throw error;
+    }
+    return {
+      user: { id: data.user.id, email: data.user.email },
+      session: data.session ? { accessToken: data.session.access_token, expiresAt: data.session.expires_at } : null,
+      requiresEmailConfirmation: !data.session
+    };
+  }
+
   const existingUser = await userRepository.findByEmail(payload.email);
   if (existingUser) {
     throw new HttpError(409, "CONFLICT", "User already exists");
@@ -107,6 +130,18 @@ const signup = async payload => {
 const login = async payload => {
   ensureRequired(payload.email, "email");
   ensureRequired(payload.password, "password");
+
+  if (env.authMode === "supabase") {
+    const { getSupabaseClient, isSupabaseConfigured } = require("../config/supabase");
+    if (!isSupabaseConfigured()) throw new HttpError(500, "CONFIG_ERROR", "Supabase authentication is not configured");
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email: payload.email, password: payload.password });
+    if (error || !data.user || !data.session) throw new HttpError(401, "UNAUTHORIZED", "Invalid credentials");
+    const profile = await profileRepository.findById(data.user.id);
+    if (!profile) throw new HttpError(404, "RESOURCE_NOT_FOUND", "No application profile found for this account");
+    if (profile.status !== "ACTIVE") throw new HttpError(403, "FORBIDDEN", "Account is disabled");
+    return { user: { id: data.user.id, email: data.user.email }, session: { accessToken: data.session.access_token, expiresAt: data.session.expires_at } };
+  }
 
   const user = await userRepository.findByEmail(payload.email);
   if (!user) {

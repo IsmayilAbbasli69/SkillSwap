@@ -237,7 +237,7 @@ function ProfileOverview({ profile, onUpdated }: { profile: MyProfile; onUpdated
               <ProfileFact label="Academic year" value={String(profile.academicYear)} />
               <ProfileFact label="Rating" value={profile.totalReviews > 0 ? `★ ${profile.averageRating}` : 'No ratings'} />
               <ProfileFact label="Institution" value={profile.institution.name} />
-              <ProfileFact label="Unit" value={profile.unit.name ?? 'Not assigned'} />
+              <ProfileFact label="Unit" value={profile.unit?.name ?? 'Not assigned'} />
               <ProfileFact label="Reviews" value={String(profile.totalReviews)} />
               <ProfileFact label="Department" value={profile.department || 'Not added'} />
             </dl>

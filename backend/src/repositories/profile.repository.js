@@ -77,6 +77,7 @@ const findSkillCandidates = async ({ institutionId, currentUserId, skillId, unit
     .from("profiles")
     .select("*")
     .eq("institution_id", institutionId)
+    .eq("role", "STUDENT")
     .eq("status", "ACTIVE")
     .neq("id", currentUserId);
 

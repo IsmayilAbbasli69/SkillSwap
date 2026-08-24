@@ -24,7 +24,6 @@ const authMiddleware = async (req, _res, next) => {
         throw new HttpError(401, "UNAUTHORIZED", "Invalid token");
       }
     } else if (env.authMode === "supabase") {
-      // Keeping this fallback just in case, but local is now default
       const { getSupabaseClient, isSupabaseConfigured } = require("../config/supabase");
       if (!isSupabaseConfigured()) {
         throw new HttpError(
@@ -39,6 +38,8 @@ const authMiddleware = async (req, _res, next) => {
         throw new HttpError(401, "UNAUTHORIZED", "Invalid token");
       }
       userId = data.user.id;
+    } else {
+      throw new HttpError(500, "CONFIG_ERROR", `Unsupported AUTH_MODE: ${env.authMode}`);
     }
 
     const profile = await profileRepository.findById(userId);

@@ -19,23 +19,28 @@ const getCategory = score => {
 
 const calculateMatchScore = (currentUser, candidate, context) => {
   let score = 0;
+  const reasons = [];
 
   if (context.reciprocal) {
     score += 50;
+    reasons.push("You can help each other with wanted skills");
   }
 
   if (currentUser.unitId && currentUser.unitId === candidate.profile.unit_id) {
     score += 20;
+    reasons.push("You are in the same institution unit");
   }
 
   const requestedLevel = context.requestedLevel;
-  const offeredLevel = candidate.offeredSkill.level;
-  if (!requestedLevel || LEVEL_RANK[offeredLevel] >= LEVEL_RANK[requestedLevel]) {
+  const offeredLevel = candidate.offeredSkill?.level;
+  if (offeredLevel && (!requestedLevel || LEVEL_RANK[offeredLevel] >= LEVEL_RANK[requestedLevel])) {
     score += 30;
+    reasons.push(requestedLevel ? "Their experience meets your requested level" : "They offer the selected skill");
   }
 
   return {
     score,
+    reasons,
     category: getCategory(score),
     reciprocal: context.reciprocal
   };
