@@ -6,6 +6,7 @@ import { createSwapRequest } from '../api/requests'
 import type { CreatedSwapRequest, MyProfile, PeerProfile, UserSkill } from '../api/types'
 import { getPeerProfile } from '../api/users'
 import { formatDate } from '../utils/date-time'
+import { ProfileIdentityCard } from '../components/ProfileIdentityCard'
 
 type Loadable<T> =
   | { status: 'loading' }
@@ -46,22 +47,20 @@ export function PeerProfilePage() {
   const offeredSkills = peer.skills.filter((skill) => skill.type === 'OFFER')
   const wantedSkills = peer.skills.filter((skill) => skill.type === 'WANT')
   const myOfferedSkills = myProfileState.status === 'loaded' ? myProfileState.data.skills.filter((skill) => skill.type === 'OFFER') : []
-  const initials = `${peer.firstName.charAt(0)}${peer.lastName.charAt(0)}`.toUpperCase()
 
   return (
     <section aria-labelledby="peer-profile-title" className="space-y-7">
       <Link to="/discover" className="inline-flex items-center gap-2 rounded-lg text-sm font-bold text-teal-700 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-teal-300">← Back to Discover</Link>
 
-      <article className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-xl shadow-teal-900/8">
-        <div className="relative h-32 bg-gradient-to-r from-teal-700 via-teal-600 to-teal-400 sm:h-40"><div aria-hidden="true" className="absolute -right-10 -top-20 size-60 rounded-full border-[30px] border-white/10" /></div>
-        <div className="px-5 pb-7 sm:px-8 sm:pb-9">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="-mt-12 flex min-w-0 items-end gap-4 sm:-mt-14">
-              <div className="grid size-24 shrink-0 place-items-center rounded-[1.75rem] border-4 border-white bg-coral-100 text-3xl font-black text-coral-500 shadow-lg sm:size-28">{initials}</div>
-              <div className="min-w-0 pb-1"><p className="text-sm font-bold uppercase tracking-wider text-teal-600">Student profile</p><h1 id="peer-profile-title" title={`${peer.firstName} ${peer.lastName}`} className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl">{peer.firstName} {peer.lastName}</h1><p className="mt-1 break-words text-sm font-medium text-slate-500">{peer.department} · Year {peer.academicYear}</p></div>
-            </div>
-            <button type="button" disabled={offeredSkills.length === 0} onClick={() => setIsRequestOpen(true)} className="min-h-12 rounded-xl bg-teal-600 px-6 py-3 font-bold text-white shadow-lg shadow-teal-600/20 outline-none transition hover:bg-teal-700 focus-visible:ring-4 focus-visible:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-50">Request SkillSwap</button>
-          </div>
+      <ProfileIdentityCard
+        firstName={peer.firstName}
+        lastName={peer.lastName}
+        avatarUrl={peer.avatarUrl}
+        secondaryText={`${peer.department || 'Department not added'} · Year ${peer.academicYear}`}
+        eyebrow="Student profile"
+        titleId="peer-profile-title"
+        action={<button type="button" disabled={offeredSkills.length === 0} onClick={() => setIsRequestOpen(true)} className="min-h-12 rounded-xl bg-teal-600 px-6 py-3 font-bold text-white shadow-lg shadow-teal-600/20 outline-none transition hover:bg-teal-700 focus-visible:ring-4 focus-visible:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-50">Request SkillSwap</button>}
+      >
 
           {offeredSkills.length === 0 && <p className="mt-4 text-right text-sm text-slate-500">This student has no offered skills available to request.</p>}
 
@@ -69,8 +68,7 @@ export function PeerProfilePage() {
             <div><h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">About</h2><p className="mt-2 whitespace-pre-wrap leading-7 text-slate-600">{peer.bio || 'No bio provided.'}</p></div>
             <dl className="grid grid-cols-2 gap-3"><Fact label="Rating" value={peer.totalReviews > 0 ? `★ ${peer.averageRating}` : 'Not rated'} /><Fact label="Reviews" value={String(peer.totalReviews)} /><Fact label="Department" value={peer.department} /><Fact label="Academic year" value={String(peer.academicYear)} /></dl>
           </div>
-        </div>
-      </article>
+      </ProfileIdentityCard>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <SkillList title="Skills I Can Help With" description="Skills this student offers." skills={offeredSkills} tone="offer" />

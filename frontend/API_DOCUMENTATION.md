@@ -135,6 +135,7 @@ Fetches the full authenticated user profile, now including **skills array** and 
     "bio": "Computer Science undergrad passionate about React & AI.",
     "department": "Computer Science",
     "academicYear": 3,
+    "avatarUrl": "https://cdn.example.com/avatars/john.jpg",
     "role": "STUDENT",
     "status": "ACTIVE",
     "averageRating": 4.85,
@@ -247,6 +248,7 @@ Fetches a peer student's public profile — including their skills, rating, and 
     "bio": "Robotics & Embedded Systems student.",
     "department": "Computer Science",
     "academicYear": 4,
+    "avatarUrl": "https://cdn.example.com/avatars/sarah.jpg",
     "averageRating": 5.0,
     "totalReviews": 8,
     "skills": [

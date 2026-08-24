@@ -99,6 +99,7 @@ export interface MyProfile {
   bio: string
   department: string
   academicYear: number
+  avatarUrl: string | null
   role: UserRole
   status: UserStatus
   averageRating: number
@@ -143,6 +144,7 @@ export interface PeerProfile {
   bio: string
   department: string
   academicYear: number
+  avatarUrl: string | null
   averageRating: number
   totalReviews: number
   skills: UserSkill[]

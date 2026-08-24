@@ -16,6 +16,7 @@ import type {
   UserSkill,
 } from '../api/types'
 import { FeedbackBanner } from '../components/FeedbackBanner'
+import { ProfileIdentityCard } from '../components/ProfileIdentityCard'
 
 const inputClassName = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-100 disabled:bg-slate-50 disabled:text-slate-500'
 
@@ -154,7 +155,6 @@ function ProfileOverview({ profile, onUpdated }: { profile: MyProfile; onUpdated
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const savingRef = useRef(false)
-  const initials = `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -191,21 +191,15 @@ function ProfileOverview({ profile, onUpdated }: { profile: MyProfile; onUpdated
   }
 
   return (
-    <article className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-xl shadow-teal-900/8">
-      <div className="h-24 bg-gradient-to-r from-teal-600 via-teal-500 to-teal-200 sm:h-28" />
-      <div className="px-5 pb-7 sm:px-8 sm:pb-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="-mt-10 flex min-w-0 items-end gap-4 sm:-mt-12">
-            <div className="grid size-20 shrink-0 place-items-center rounded-3xl border-4 border-white bg-coral-100 text-2xl font-black text-coral-500 shadow-md sm:size-24 sm:text-3xl">{initials}</div>
-            <div className="min-w-0 pb-1">
-              <h2 title={`${profile.firstName} ${profile.lastName}`} className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl">{profile.firstName} {profile.lastName}</h2>
-              <p className="mt-1 truncate text-sm font-medium text-slate-500">{profile.department || 'Department not added'}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => { setError(null); setIsEditing((value) => !value) }} className="rounded-xl border border-teal-200 px-5 py-2.5 text-sm font-bold text-teal-700 outline-none transition hover:bg-teal-50 focus-visible:ring-4 focus-visible:ring-teal-100">
+    <ProfileIdentityCard
+      firstName={profile.firstName}
+      lastName={profile.lastName}
+      avatarUrl={profile.avatarUrl}
+      secondaryText={profile.department || 'Department not added'}
+      action={<button type="button" onClick={() => { setError(null); setIsEditing((value) => !value) }} className="rounded-xl border border-teal-200 px-5 py-2.5 text-sm font-bold text-teal-700 outline-none transition hover:bg-teal-50 focus-visible:ring-4 focus-visible:ring-teal-100">
             {isEditing ? 'Cancel editing' : 'Edit profile'}
-          </button>
-        </div>
+          </button>}
+    >
 
         {isEditing ? (
           <form onSubmit={handleSubmit} className="mt-8 border-t border-slate-100 pt-7">
@@ -243,8 +237,7 @@ function ProfileOverview({ profile, onUpdated }: { profile: MyProfile; onUpdated
             </dl>
           </div>
         )}
-      </div>
-    </article>
+    </ProfileIdentityCard>
   )
 }
 

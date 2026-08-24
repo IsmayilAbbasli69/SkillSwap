@@ -23,7 +23,9 @@ test("auth, authorization, signup and shared request lifecycle", async () => {
   const john = await login("student@skillswap.test");
   const maya = await login("maya@skillswap.test");
   const admin = await login("admin@skillswap.test");
-  assert.equal((await request("/profile/me", { token: john })).json.data.role, "STUDENT");
+  const johnProfile = (await request("/profile/me", { token: john })).json.data;
+  assert.equal(johnProfile.role, "STUDENT");
+  assert.equal(johnProfile.avatarUrl, null);
   assert.equal((await request("/profile/me", { token: admin })).json.data.role, "ADMIN");
   assert.equal((await request("/admin/stats", { token: john })).response.status, 403);
   assert.equal((await request("/admin/stats", { token: admin })).response.status, 200);
@@ -70,6 +72,8 @@ test("auth, authorization, signup and shared request lifecycle", async () => {
   assert.equal(refreshedJohnSession.reviewSubmitted, true);
 
   const mayaProfile = await request("/users/90000000-0000-4000-8000-000000000002", { token: john });
+  assert.equal(mayaProfile.json.data.id, "90000000-0000-4000-8000-000000000002");
+  assert.equal(mayaProfile.json.data.avatarUrl, null);
   const publicReview = mayaProfile.json.data.recentReviews.find(review => review.comment === "Great");
   assert.deepEqual(publicReview.reviewer, { id: "90000000-0000-4000-8000-000000000001", name: "John Smith" });
   assert.equal(publicReview.reviewer.email, undefined);

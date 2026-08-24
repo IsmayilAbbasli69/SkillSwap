@@ -7,6 +7,7 @@ export const profileFixture: MyProfile = {
   bio: 'I enjoy learning with other students.',
   department: 'Computer Science',
   academicYear: 3,
+  avatarUrl: null,
   role: 'STUDENT',
   status: 'ACTIVE',
   averageRating: 4.5,
@@ -26,6 +27,7 @@ export const peerProfileFixture: PeerProfile = {
   bio: 'Design student and patient teacher.',
   department: 'Design',
   academicYear: 2,
+  avatarUrl: null,
   averageRating: 4.8,
   totalReviews: 7,
   skills: [
