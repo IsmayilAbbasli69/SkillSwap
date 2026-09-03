@@ -68,7 +68,12 @@ const signup = async payload => {
     const { data, error } = await supabase.auth.signUp({ email: payload.email, password: payload.password });
     if (error) {
       const duplicate = /already|registered/i.test(error.message || "");
-      throw new HttpError(duplicate ? 409 : 502, duplicate ? "CONFLICT" : "AUTH_PROVIDER_ERROR", duplicate ? "User already exists" : "Authentication provider failed");
+      const rateLimited = error.status === 429 || /rate.?limit|too many/i.test(error.message || "");
+      throw new HttpError(
+        duplicate ? 409 : rateLimited ? 429 : 502,
+        duplicate ? "CONFLICT" : rateLimited ? "AUTH_RATE_LIMITED" : "AUTH_PROVIDER_ERROR",
+        duplicate ? "User already exists" : error.message || "Authentication provider failed"
+      );
     }
     if (!data.user) throw new HttpError(502, "AUTH_PROVIDER_ERROR", "Authentication provider did not create a user");
     try {
