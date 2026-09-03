@@ -3,7 +3,15 @@
 -- Run this script in your Supabase SQL Editor (Dashboard -> SQL Editor -> New Query)
 -- ==============================================================================
 
--- 1. Authentication identities are owned by Supabase Auth (auth.users).
+-- 1. Application authentication identities and password hashes are stored in
+--    public.users. Supabase Auth is not used by the application.
+
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
 -- 2. Institutions (Universities / Organizations)
 CREATE TABLE IF NOT EXISTS public.institutions (
@@ -24,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.institution_units (
 
 -- 4. Profiles (User application profiles)
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
   institution_id UUID REFERENCES public.institutions(id) ON DELETE SET NULL,
   unit_id UUID REFERENCES public.institution_units(id) ON DELETE SET NULL,
   first_name TEXT NOT NULL,
@@ -105,4 +113,8 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 -- ==============================================================================
 -- ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS meeting_url TEXT;
 -- ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS location_note TEXT;
+-- If profiles was created with the old Supabase Auth foreign key, migrate it:
+-- ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+-- ALTER TABLE public.profiles ADD CONSTRAINT profiles_id_fkey
+--   FOREIGN KEY (id) REFERENCES public.users(id) ON DELETE CASCADE;
 

@@ -5,7 +5,7 @@
 
 [build.environment]
   NODE_ENV = "production"
-  AUTH_MODE = "supabase"
+  AUTH_MODE = "database"
 
 [functions]
   external_node_modules = ["express"]

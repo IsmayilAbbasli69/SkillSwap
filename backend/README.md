@@ -6,7 +6,7 @@ Backend-only MVP implementation of the SkillSwap PRD/TDD.
 
 - Node.js
 - Express
-- Local JWT authentication with a persisted development data store, or Supabase Auth
+- Backend JWT authentication with a persisted development data store or Supabase database
 - Repository layer backed by the selected development/production data provider
 - Swagger UI for endpoint testing
 
@@ -31,7 +31,7 @@ the Express app through `/api/*` and forwards `/health` to the function.
 Configure these Netlify environment variables before deploying:
 
 - `NODE_ENV=production`
-- `AUTH_MODE=supabase`
+- `AUTH_MODE=database`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` when profile bootstrap or admin operations need it
@@ -55,10 +55,10 @@ and creates these development-only accounts (password `Password123!`):
 - `maya@skillswap.test` (`STUDENT`)
 - `admin@skillswap.test` (`ADMIN`)
 
-For Supabase mode set `AUTH_MODE=supabase`, `SUPABASE_URL`, and
-`SUPABASE_ANON_KEY`. Set `SUPABASE_SERVICE_ROLE_KEY` on the backend when profile
-bootstrap/admin operations require it. React always talks to Express; it never
-receives a Supabase key.
+For database-backed authentication set `AUTH_MODE=database`, `SUPABASE_URL`,
+and a Supabase key. Password hashes are stored in `public.users`; Supabase Auth
+email delivery is not used. React always talks to Express; it never receives a
+Supabase key.
 
 ### Signup
 

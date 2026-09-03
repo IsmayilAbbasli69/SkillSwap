@@ -16,7 +16,7 @@ const authMiddleware = async (req, _res, next) => {
 
     let userId = token;
 
-    if (env.authMode === "local") {
+    if (env.authMode === "local" || env.authMode === "database") {
       try {
         const decoded = jwt.verify(token, env.jwtSecret || "default_secret");
         userId = decoded.sub;
