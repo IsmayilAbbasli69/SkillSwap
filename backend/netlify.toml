@@ -3,6 +3,10 @@
   publish = "public"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_ENV = "production"
+  AUTH_MODE = "supabase"
+
 [functions]
   external_node_modules = ["express"]
   node_bundler = "esbuild"
