@@ -22,6 +22,22 @@ Server:
 
 - `http://localhost:4000`
 - Docs: `http://localhost:4000/docs`
+
+## Netlify deployment
+
+Set the Netlify base directory to `backend`. The included `netlify.toml` exposes
+the Express app through `/api/*` and forwards `/health` to the function.
+
+Configure these Netlify environment variables before deploying:
+
+- `NODE_ENV=production`
+- `AUTH_MODE=supabase`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` when profile bootstrap or admin operations need it
+
+The frontend `VITE_API_BASE_URL` must point to the deployed backend URL ending
+in `/api`, for example `https://your-backend.netlify.app/api`.
 - Health: `http://localhost:4000/health`
 
 ## Authentication

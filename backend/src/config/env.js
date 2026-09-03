@@ -9,7 +9,9 @@ const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 4000),
   apiPrefix: process.env.API_PREFIX || "/api",
-  authMode: process.env.AUTH_MODE || "local",
+  // Netlify/Vercel-style deployments must use Supabase instead of the
+  // process-local JSON store, which is not persistent between invocations.
+  authMode: process.env.AUTH_MODE || (process.env.NODE_ENV === "production" ? "supabase" : "local"),
   jwtSecret: process.env.JWT_SECRET || "your-secret-key-here",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1h",
   supabaseUrl: process.env.SUPABASE_URL || "",
